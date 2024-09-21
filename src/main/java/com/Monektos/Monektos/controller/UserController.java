@@ -1,5 +1,8 @@
 package com.Monektos.Monektos.controller;
 
+import com.Monektos.Monektos.dto.ApiResponse;
+import com.Monektos.Monektos.dto.SignupResponse;
+import com.Monektos.Monektos.exception.UserAlreadyExistsException;
 import com.Monektos.Monektos.model.AppUser;
 import com.Monektos.Monektos.service.UserLoginService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,12 +22,13 @@ public class UserController {
     private UserLoginService loginService;
 
     @PostMapping("/signup")
-    public ResponseEntity<AppUser> signUp(@RequestBody AppUser user) {
-        if(loginService.signUp(user)) {
-            return new ResponseEntity<>(HttpStatus.CREATED);
+    public ResponseEntity<?> signUp(@RequestBody AppUser user) {
+        try {
+            SignupResponse signup=loginService.signUp(user);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(signup);
         }
-        else {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        catch (UserAlreadyExistsException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),HttpStatus.CONFLICT.value()));
         }
     }
 }

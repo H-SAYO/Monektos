@@ -1,5 +1,7 @@
 package com.Monektos.Monektos.service;
 
+import com.Monektos.Monektos.dto.SignupResponse;
+import com.Monektos.Monektos.exception.UserAlreadyExistsException;
 import com.Monektos.Monektos.model.AppUser;
 import com.Monektos.Monektos.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,13 +20,13 @@ public class UserLoginService {
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
 
-    public boolean signUp(AppUser user) {
+    public SignupResponse signUp(AppUser user) {
         Optional<AppUser> foundUser = userRepository.findByUsername(user.getUsername());
         if (foundUser.isPresent()) {
-            return false; // User already exists
+            throw new UserAlreadyExistsException("User already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-        return true; // User created successfully
+        AppUser savedUser=userRepository.save(user);
+        return new SignupResponse("Account created",200,savedUser); // User created successfully
     }
 }
