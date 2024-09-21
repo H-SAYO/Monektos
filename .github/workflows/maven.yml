@@ -43,7 +43,6 @@ jobs:
 
       - name: Run tests
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/monektos
           DB_USERNAME: postgres
           DB_PASSWORD: postgres
         run: mvn -B test --file pom.xml
