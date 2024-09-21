@@ -1,0 +1,39 @@
+image: maven:3.8.6-openjdk-17
+
+variables:
+  DB_NAME: monektos
+  DB_USERNAME: postgres
+  DB_PASSWORD: postgres
+  DB_HOST: postgres
+
+services:
+  - name: postgres:latest
+    alias: postgres
+    command: ['postgres', '-c', 'fsync=off']  # Speed up database startup
+
+stages:
+  - test
+  - build
+  - deploy
+
+before_script:
+  - apt-get update && apt-get install -y curl
+
+test:
+  stage: test
+  script:
+    - mvn test
+
+build:
+  stage: build
+  script:
+    - mvn package --no-test
+  artifacts:
+    paths:
+      - target/*.jar
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy your application here"
+    # Add your deployment script, e.g., Docker, Kubernetes, or any other method.
