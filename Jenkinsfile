@@ -42,25 +42,26 @@ pipeline {
         }
 
         stage('Notify GitHub') {
-            steps {
-                script {
-                    def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
-                    def description = currentBuild.result == 'SUCCESS' ? 'Build successful! 🎉' : 'Build failed. ❌'
-                    def context = 'continuous-integration/jenkins'
-                    def sha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+    steps {
+        script {
+            def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
+            def description = currentBuild.result == 'SUCCESS' ? 'Build successful! 🎉' : 'Build failed. ❌'
+            def context = 'continuous-integration/jenkins'
+            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim() // Use bat instead of sh
 
-                    def response = httpRequest(
-                        httpMode: 'POST',
-                        url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
-                        contentType: 'APPLICATION_JSON',
-                        requestBody: "{\"state\": \"${status}\", \"description\": \"${description}\", \"context\": \"${context}\"}",
-                        customHeaders: [[name: 'Authorization', value: "token ${GITHUB_TOKEN}"]],
-                        validResponseCodes: '200'
-                    )
-                    echo "GitHub status update response: ${response.status}"
-                }
-            }
+            def response = httpRequest(
+                httpMode: 'POST',
+                url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
+                contentType: 'APPLICATION_JSON',
+                requestBody: "{\"state\": \"${status}\", \"description\": \"${description}\", \"context\": \"${context}\"}",
+                customHeaders: [[name: 'Authorization', value: "token ${GITHUB_TOKEN}"]],
+                validResponseCodes: '200'
+            )
+            echo "GitHub status update response: ${response.status}"
         }
+    }
+}
+
     }
     
     post {
