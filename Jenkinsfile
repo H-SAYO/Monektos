@@ -40,6 +40,18 @@ pipeline {
                 bat 'mvn test'
             }
         }
+
+        stage('Comment on PR') {
+            steps {
+                script {
+                    def pr = currentBuild.rawBuild.getCause(hudson.model.Cause$PullRequest)
+                    if (pr) {
+                        def comment = "Build successful! 🎉"
+                        githubNotify comment: comment
+                    }
+                }
+            }
+        }
     }
     
     post {
