@@ -49,6 +49,9 @@ pipeline {
             def context = 'continuous-integration/jenkins'
             def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim()
 
+            // Make sure to remove any unwanted characters if present
+            sha = sha.replaceAll(/[^0-9a-f]/, '')
+
             def response = httpRequest(
                 httpMode: 'POST',
                 url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
@@ -61,6 +64,7 @@ pipeline {
         }
     }
 }
+
 
 
     }
