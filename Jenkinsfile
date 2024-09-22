@@ -1,53 +1,53 @@
 pipeline {
     agent any
-    
-    environment {
-        JAVA_HOME = tool name: 'JDK 17', type: 'jdk'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
-    }
-    
     stages {
-        stage('Checkout SCM') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Set up JDK 17') {
+        stage('Build') {
             steps {
                 script {
-                    env.JAVA_HOME = tool name: 'JDK 17'
-                    env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+                    def os = System.properties['os.name'].toLowerCase()
+                    echo "Detected OS: ${os}"
+
+                    if (os.contains("linux")) {
+                        // Execute Maven install on Linux
+                        sh "mvn clean install"
+                    } else {
+                        // Execute Maven install on Windows
+                        bat "mvn clean install"
+                    }
                 }
             }
         }
-
-        stage('Start PostgreSQL') {
+        stage('Test') {
             steps {
-                bat 'docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monektos -p 5432:5432 -d postgres:14'
-                bat 'ping -n 21 127.0.0.1 > nul'
+                script {
+                    def os = System.properties['os.name'].toLowerCase()
+                    echo "Detected OS: ${os}"
+
+                    if (os.contains("linux")) {
+                        // Execute tests on Linux
+                        sh "mvn test"
+                    } else {
+                        // Execute tests on Windows
+                        bat "mvn test"
+                    }
+                }
             }
         }
-
-        stage('Build with Maven') {
+        stage('Deploy') {
             steps {
-                bat 'mvn clean install'
-            }
-        }
+                script {
+                    def os = System.properties['os.name'].toLowerCase()
+                    echo "Detected OS: ${os}"
 
-        stage('Run Tests') {
-            steps {
-                bat 'mvn test'
+                    if (os.contains("linux")) {
+                        // Execute deployment on Linux
+                        sh "mvn deploy"
+                    } else {
+                        // Execute deployment on Windows
+                        bat "mvn deploy"
+                    }
+                }
             }
-        }
-    }
-    
-    post {
-        always {
-            echo 'Cleaning up...'
-            // Clean up Docker container if needed
-            bat 'docker stop postgres'
-            bat 'docker rm postgres'
         }
     }
 }
