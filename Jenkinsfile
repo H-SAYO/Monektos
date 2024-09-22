@@ -41,13 +41,13 @@ pipeline {
             }
         }
 
-        stage('Notify GitHub') {
+       stage('Notify GitHub') {
     steps {
         script {
             def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
             def description = currentBuild.result == 'SUCCESS' ? 'Build successful! 🎉' : 'Build failed. ❌'
             def context = 'continuous-integration/jenkins'
-            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim() // Use bat instead of sh
+            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim()
 
             def response = httpRequest(
                 httpMode: 'POST',
@@ -61,6 +61,7 @@ pipeline {
         }
     }
 }
+
 
     }
     
