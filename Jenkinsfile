@@ -41,41 +41,35 @@ pipeline {
             }
         }
 
-        stage('Notify GitHub') {
-    steps {
-        script {
-            def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
-            def description = currentBuild.result == 'SUCCESS' ? 'The build succeeded! 🎉' : 'The build failed. ❌'
-            def context = 'continuous-integration/jenkins'
-            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim().replaceAll("\\r?\\n", "") // Use bat for Windows
-
-            def response = httpRequest(
-                httpMode: 'POST',
-                url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
-                contentType: 'APPLICATION_JSON',
-                requestBody: """
-                {
-                    "state": "${status}",
-                    "target_url": "http://localhost:8080/job/monektos/${env.BUILD_ID}/",
-                    "description": "${description}",
-                    "context": "${context}"
-                }
-                """,
-                customHeaders: [
-                    [name: 'Authorization', value: "Bearer ${GITHUB_TOKEN}"],
-                    [name: 'Accept', value: 'application/vnd.github+json'],
-                    [name: 'X-GitHub-Api-Version', value: '2022-11-28']
-                ],
-                validResponseCodes: '200'
-            )
-            echo "GitHub status update response: ${response.status}"
-        }
     }
-}
 
     }
     
     post {
+
+        success {
+            script {
+                // Notify GitHub of successful build
+                def commitSha = env.GIT_COMMIT  // Jenkins auto-populates this variable
+                bat """
+                    curl -H "Authorization: token ${GITHUB_TOKEN}" ^
+                    -d "{\\"state\\": \\"success\\", \\"target_url\\": \\"${env.BUILD_URL}\\", \\"description\\": \\"Build succeeded\\", \\"context\\": \\"continuous-integration/jenkins\\"}" ^
+                    https://api.github.com/repos/<owner>/<repo>/statuses/${commitSha}
+                """
+            }
+        }
+        failure {
+            script {
+                // Notify GitHub of failed build
+                def commitSha = env.GIT_COMMIT
+                bat """
+                    curl -H "Authorization: token ${GITHUB_TOKEN}" ^
+                    -d "{\\"state\\": \\"failure\\", \\"target_url\\": \\"${env.BUILD_URL}\\", \\"description\\": \\"Build failed\\", \\"context\\": \\"continuous-integration/jenkins\\"}" ^
+                    https://api.github.com/repos/H-SAYO/Monektos/statuses/${commitSha}
+                """
+            }
+        }
+    
         always {
             echo 'Cleaning up...'
             // Clean up Docker container if needed
