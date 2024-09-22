@@ -41,24 +41,6 @@ pipeline {
             }
         }
 
-        stage('Notify GitHub') {
-            steps {
-                script {
-                    def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
-                    def description = currentBuild.result == 'SUCCESS' ? 'Build passed! 🎉' : 'Build failed! ❌'
-                    
-                    // Notify GitHub status
-                    githubNotify context: 'continuous-integration/jenkins', status: status, description: description
-
-                    // Comment on PR
-                    def pr = currentBuild.rawBuild.getCause(hudson.model.Cause$PullRequest)
-                    if (pr && status == 'success') {
-                        def comment = "Build successful! 🎉"
-                        githubNotify comment: comment
-                    }
-                }
-            }
-        }
     }
     
     post {
