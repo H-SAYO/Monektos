@@ -4,6 +4,8 @@ pipeline {
     environment {
         JAVA_HOME = tool name: 'JDK 17', type: 'jdk'
         PATH = "${JAVA_HOME}/bin;${env.PATH}"
+        GITHUB_REPOSITORY = 'H-SAYO/Monektos' // Add your repository
+        GITHUB_TOKEN = credentials('your-github-token-id') // Use Jenkins credentials for security
     }
     
     stages {
@@ -41,43 +43,37 @@ pipeline {
             }
         }
 
-       stage('Notify GitHub') {
-    stage('Notify GitHub') {
-    steps {
-        script {
-            def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
-            def description = currentBuild.result == 'SUCCESS' ? 'The build succeeded! 🎉' : 'The build failed. ❌'
-            def context = 'continuous-integration/jenkins'
-            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim() // Use bat for Windows
+        stage('Notify GitHub') {
+            steps {
+                script {
+                    def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
+                    def description = currentBuild.result == 'SUCCESS' ? 'The build succeeded! 🎉' : 'The build failed. ❌'
+                    def context = 'continuous-integration/jenkins'
+                    def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim() // Use bat for Windows
 
-            def response = httpRequest(
-                httpMode: 'POST',
-                url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
-                contentType: 'APPLICATION_JSON',
-                requestBody: """
-                {
-                    "state": "${status}",
-                    "target_url": "http://localhost:8080/job/monektos/${env.BUILD_ID}/",
-                    "description": "${description}",
-                    "context": "${context}"
+                    def response = httpRequest(
+                        httpMode: 'POST',
+                        url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: """
+                        {
+                            "state": "${status}",
+                            "target_url": "http://localhost:8080/job/monektos/${env.BUILD_ID}/",
+                            "description": "${description}",
+                            "context": "${context}"
+                        }
+                        """,
+                        customHeaders: [
+                            [name: 'Authorization', value: "Bearer ${GITHUB_TOKEN}"],
+                            [name: 'Accept', value: 'application/vnd.github+json'],
+                            [name: 'X-GitHub-Api-Version', value: '2022-11-28']
+                        ],
+                        validResponseCodes: '200'
+                    )
+                    echo "GitHub status update response: ${response.status}"
                 }
-                """,
-                customHeaders: [
-                    [name: 'Authorization', value: "Bearer ${GITHUB_TOKEN}"],
-                    [name: 'Accept', value: 'application/vnd.github+json'],
-                    [name: 'X-GitHub-Api-Version', value: '2022-11-28']
-                ],
-                validResponseCodes: '200'
-            )
-            echo "GitHub status update response: ${response.status}"
+            }
         }
-    }
-}
-
-}
-
-
-
     }
     
     post {
