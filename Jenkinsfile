@@ -41,6 +41,22 @@ pipeline {
             }
         }
 
+        stage('Notify GitHub') {
+            when {
+                expression {
+                    currentBuild.result == 'SUCCESS'
+                }
+            }
+            steps {
+                script {
+                    def pr = currentBuild.rawBuild.getCause(hudson.model.Cause$PullRequest)
+                    if (pr) {
+                        def comment = "Build successful! 🎉"
+                        githubNotify comment: comment
+                    }
+                }
+            }
+        }
     }
     
     post {
