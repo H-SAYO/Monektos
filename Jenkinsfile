@@ -42,27 +42,38 @@ pipeline {
         }
 
        stage('Notify GitHub') {
+    stage('Notify GitHub') {
     steps {
         script {
             def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
-            def description = currentBuild.result == 'SUCCESS' ? 'Build successful! 🎉' : 'Build failed. ❌'
+            def description = currentBuild.result == 'SUCCESS' ? 'The build succeeded! 🎉' : 'The build failed. ❌'
             def context = 'continuous-integration/jenkins'
-            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim()
-
-            // Make sure to remove any unwanted characters if present
-            sha = sha.replaceAll(/[^0-9a-f]/, '')
+            def sha = bat(script: 'git rev-parse HEAD', returnStdout: true).trim() // Use bat for Windows
 
             def response = httpRequest(
                 httpMode: 'POST',
                 url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
                 contentType: 'APPLICATION_JSON',
-                requestBody: "{\"state\": \"${status}\", \"description\": \"${description}\", \"context\": \"${context}\"}",
-                customHeaders: [[name: 'Authorization', value: "token ${GITHUB_TOKEN}"]],
+                requestBody: """
+                {
+                    "state": "${status}",
+                    "target_url": "http://localhost:8080/job/monektos/${env.BUILD_ID}/",
+                    "description": "${description}",
+                    "context": "${context}"
+                }
+                """,
+                customHeaders: [
+                    [name: 'Authorization', value: "Bearer ${GITHUB_TOKEN}"],
+                    [name: 'Accept', value: 'application/vnd.github+json'],
+                    [name: 'X-GitHub-Api-Version', value: '2022-11-28']
+                ],
                 validResponseCodes: '200'
             )
             echo "GitHub status update response: ${response.status}"
         }
     }
+}
+
 }
 
 
