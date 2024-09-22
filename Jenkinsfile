@@ -3,7 +3,7 @@ pipeline {
     
     environment {
         JAVA_HOME = tool name: 'JDK 17', type: 'jdk'
-        PATH = "${JAVA_HOME}/bin:${env.PATH}"
+        PATH = "${JAVA_HOME}/bin;${env.PATH}"
     }
     
     stages {
@@ -41,11 +41,18 @@ pipeline {
             }
         }
 
-        stage('Comment on PR') {
+        stage('Notify GitHub') {
             steps {
                 script {
+                    def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
+                    def description = currentBuild.result == 'SUCCESS' ? 'Build passed! 🎉' : 'Build failed! ❌'
+                    
+                    // Notify GitHub status
+                    githubNotify context: 'continuous-integration/jenkins', status: status, description: description
+
+                    // Comment on PR
                     def pr = currentBuild.rawBuild.getCause(hudson.model.Cause$PullRequest)
-                    if (pr) {
+                    if (pr && status == 'success') {
                         def comment = "Build successful! 🎉"
                         githubNotify comment: comment
                     }
