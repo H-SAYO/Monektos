@@ -42,18 +42,22 @@ pipeline {
         }
 
         stage('Notify GitHub') {
-            when {
-                expression {
-                    currentBuild.result == 'SUCCESS'
-                }
-            }
             steps {
                 script {
-                    def pr = currentBuild.rawBuild.getCause(hudson.model.Cause$PullRequest)
-                    if (pr) {
-                        def comment = "Build successful! 🎉"
-                        githubNotify comment: comment
-                    }
+                    def status = currentBuild.result == 'SUCCESS' ? 'success' : 'failure'
+                    def description = currentBuild.result == 'SUCCESS' ? 'Build successful! 🎉' : 'Build failed. ❌'
+                    def context = 'continuous-integration/jenkins'
+                    def sha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+
+                    def response = httpRequest(
+                        httpMode: 'POST',
+                        url: "https://api.github.com/repos/${env.GITHUB_REPOSITORY}/statuses/${sha}",
+                        contentType: 'APPLICATION_JSON',
+                        requestBody: "{\"state\": \"${status}\", \"description\": \"${description}\", \"context\": \"${context}\"}",
+                        customHeaders: [[name: 'Authorization', value: "token ${GITHUB_TOKEN}"]],
+                        validResponseCodes: '200'
+                    )
+                    echo "GitHub status update response: ${response.status}"
                 }
             }
         }
