@@ -59,11 +59,4 @@ pipeline {
             }
         }
     }
-
-    post {
-        always {
-            // Archive test results
-            junit '**/target/surefire-reports/*.xml'  // Adjust based on your test report location
-        }
-    }
 }
