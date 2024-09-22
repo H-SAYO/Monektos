@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'ubuntu'  // Ensure you have an appropriate agent configured
-    }
+    agent any  // Use the default Jenkins agent
 
     environment {
         DB_USERNAME = 'postgres'
@@ -64,8 +62,8 @@ pipeline {
 
     post {
         always {
-            // Optional: Archive artifacts or perform additional cleanup
-            junit '**/target/surefire-reports/*.xml'  // Adjust according to your test reports
+            // Archive test results
+            junit '**/target/surefire-reports/*.xml'  // Adjust based on your test report location
         }
     }
 }
