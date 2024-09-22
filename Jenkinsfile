@@ -1,62 +1,53 @@
 pipeline {
-    agent any  // Use the default Jenkins agent
-
+    agent any
+    
     environment {
-        DB_USERNAME = 'postgres'
-        DB_PASSWORD = 'postgres'
+        JAVA_HOME = tool name: 'JDK 17', type: 'jdk'
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
-
+    
     stages {
-        stage('Checkout') {
+        stage('Checkout SCM') {
             steps {
-                // Checkout the code from Git
-                git branch: 'main', url: 'https://github.com/H-SAYO/Monektos.git'
+                checkout scm
             }
         }
 
         stage('Set up JDK 17') {
             steps {
-                // Set up JDK 17
                 script {
-                    def javaHome = tool name: 'JDK 17', type: 'jdk'
-                    env.JAVA_HOME = javaHome
-                    env.PATH = "${javaHome}/bin:${env.PATH}"
+                    env.JAVA_HOME = tool name: 'JDK 17'
+                    env.PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
                 }
             }
         }
 
         stage('Start PostgreSQL') {
             steps {
-                // Start PostgreSQL service
-                script {
-                    bat '''
-                    docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monektos -p 5432:5432 -d postgres:14
-                    ping -n 21 127.0.0.1 >nul
-                    '''
-                }
+                bat 'docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monektos -p 5432:5432 -d postgres:14'
+                bat 'ping -n 21 127.0.0.1 > nul'
             }
         }
 
         stage('Build with Maven') {
             steps {
-                // Build the project with Maven
-                sh 'mvn -B package --file pom.xml'
+                bat 'mvn clean install'
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Run tests with Maven
-                sh 'mvn -B test --file pom.xml'
+                bat 'mvn test'
             }
         }
-
-        stage('Cleanup') {
-            steps {
-                // Stop and remove PostgreSQL container
-                sh 'docker stop postgres'
-                sh 'docker rm postgres'
-            }
+    }
+    
+    post {
+        always {
+            echo 'Cleaning up...'
+            // Clean up Docker container if needed
+            bat 'docker stop postgres'
+            bat 'docker rm postgres'
         }
     }
 }
