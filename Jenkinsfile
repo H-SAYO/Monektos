@@ -20,7 +20,7 @@ pipeline {
                 script {
                     def javaHome = tool name: 'JDK 17', type: 'jdk'
                     env.JAVA_HOME = javaHome
-                    env.PATH = "${javaHome}/bin;${env.PATH}"
+                    env.PATH = "${javaHome}/bin:${env.PATH}"
                 }
             }
         }
@@ -31,7 +31,7 @@ pipeline {
                 script {
                     bat '''
                     docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monektos -p 5432:5432 -d postgres:14
-                    timeout /t 20  // Wait for PostgreSQL to be ready
+                    timeout /t 20
                     '''
                 }
             }
@@ -40,22 +40,22 @@ pipeline {
         stage('Build with Maven') {
             steps {
                 // Build the project with Maven
-                bat 'mvn -B package --file pom.xml'
+                sh 'mvn -B package --file pom.xml'
             }
         }
 
         stage('Run Tests') {
             steps {
                 // Run tests with Maven
-                bat 'mvn -B test --file pom.xml'
+                sh 'mvn -B test --file pom.xml'
             }
         }
 
         stage('Cleanup') {
             steps {
                 // Stop and remove PostgreSQL container
-                bat 'docker stop postgres'
-                bat 'docker rm postgres'
+                sh 'docker stop postgres'
+                sh 'docker rm postgres'
             }
         }
     }
