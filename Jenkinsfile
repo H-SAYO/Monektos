@@ -31,7 +31,7 @@ pipeline {
                 script {
                     bat '''
                     docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monektos -p 5432:5432 -d postgres:14
-                    timeout /t 20
+                    ping -n 21 127.0.0.1 >nul
                     '''
                 }
             }
